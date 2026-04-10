@@ -1,380 +1,337 @@
-#include "listadl_circular.h"
+/*
+ * ==========================================================================
+ *  EJERCICIO 2 — Carrusel de inventario (lista doblemente ligada circular)
+ * ==========================================================================
+ *
+ *  En muchos videojuegos el jugador dispone de un inventario de herramientas
+ *  que puede recorrer cíclicamente con las teclas "siguiente" y "anterior".
+ *
+ *  En este ejercicio se implementa un CARRUSEL CIRCULAR usando la estructura
+ *  dllista directamente (sin ListaDL), conectando el último elemento con el
+ *  primero en ambos sentidos. Un puntero "seleccion" indica la herramienta
+ *  actualmente equipada.
+ *
+ *  ¿Por qué lista doblemente ligada?
+ *    • Avanzar y retroceder en el carrusel en O(1) gracias a los punteros
+ *      "siguiente" y "previo".
+ *    • Insertar y eliminar herramientas en cualquier posición sin perder
+ *      la capacidad de navegar en ambas direcciones.
+ *
+ *  Las y los alumnos deben completar las funciones marcadas con TODO.
+ *  Compile con:
+ *      gcc -Wall -Wextra -o carrusel carrusel.c listadl.c
+ *
+ * ==========================================================================
+ */
 
-dllista_circular *crear_elemento_circular(DATO dato) {
-    dllista_circular *nuevo = (dllista_circular *)malloc(sizeof(dllista_circular));
+#include "listadl.h"
+#include <string.h>
+
+/* ---------- Herramientas del inventario ---------- */
+/* Cada herramienta se identifica con un entero (DATO) */
+#define ESPADA      0
+#define ARCO        1
+#define ESCUDO      2
+#define POCION      3
+#define BOMBA       4
+#define ANTORCHA    5
+#define GANCHO      6
+#define LLAVE       7
+
+#define NUM_HERRAMIENTAS 8
+
+const char *nombre_herramienta(DATO id) {
+    const char *nombres[] = {
+        "Espada", "Arco", "Escudo", "Poción",
+        "Bomba", "Antorcha", "Gancho", "Llave"
+    };
+    if (id >= 0 && id < NUM_HERRAMIENTAS)
+        return nombres[id];
+    return "???";
+}
+
+/* ================================================================
+ *  Funciones proporcionadas (no modificar)
+ * ================================================================ */
+
+/*
+ * Muestra el carrusel centrado en la selección actual.
+ * Muestra 2 herramientas a cada lado de la seleccionada.
+ */
+void mostrar_carrusel(dllista *seleccion) {
+    if (seleccion == NULL) {
+        printf("  [ Inventario vacío ]\n");
+        return;
+    }
+
+    /* Retroceder 2 posiciones para mostrar contexto */
+    dllista *inicio = seleccion->previo->previo;
+
+    printf("  ");
+    dllista *actual = inicio;
+    for (int i = 0; i < 5; i++) {
+        if (actual == seleccion)
+            printf(" [> %s <] ", nombre_herramienta(actual->dato));
+        else
+            printf("   %s   ", nombre_herramienta(actual->dato));
+
+        if (i < 4)
+            printf("-");
+        actual = actual->siguiente;
+    }
+    printf("\n");
+}
+
+/*
+ * Cuenta los elementos del carrusel circular.
+ */
+int contar_carrusel(dllista *cualquiera) {
+    if (cualquiera == NULL)
+        return 0;
+    int cuenta = 1;
+    dllista *actual = cualquiera->siguiente;
+    while (actual != cualquiera) {
+        cuenta++;
+        actual = actual->siguiente;
+    }
+    return cuenta;
+}
+
+/*
+ * Imprime todo el inventario en orden desde un nodo dado.
+ */
+void imprimir_inventario(dllista *desde) {
+    if (desde == NULL) {
+        printf("  (vacío)\n");
+        return;
+    }
+    printf("  Inventario: ");
+    dllista *actual = desde;
+    do {
+        printf("%s", nombre_herramienta(actual->dato));
+        actual = actual->siguiente;
+        if (actual != desde)
+            printf(" -> ");
+    } while (actual != desde);
+    printf(" -> (vuelve a %s)\n", nombre_herramienta(desde->dato));
+}
+
+/* ================================================================
+ *  Funciones por completar
+ * ================================================================ */
+
+/*
+ *  TODO 1: insertar_en_carrusel
+ *
+ *  Inserta un nuevo elemento en el carrusel circular DESPUÉS del
+ *  nodo "despues_de".
+ *
+ *  Si el carrusel está vacío (despues_de == NULL), crea un nodo
+ *  que apunte a sí mismo en ambos sentidos (previo y siguiente).
+ *
+ *  Si no está vacío, inserta el nuevo nodo entre "despues_de" y
+ *  "despues_de->siguiente", actualizando los 4 punteros necesarios.
+ *
+ *  Retorna: un puntero al nuevo nodo insertado.
+ *
+ *  Pista: usa crear_elemento() para crear el nodo.
+ */
+dllista *insertar_en_carrusel(dllista *despues_de, DATO dato) {
+    dllista *nuevo = crear_elemento(dato);
     if (nuevo == NULL)
-        return NULL;
-    nuevo->dato = dato;
-    nuevo->previo = NULL;
-    nuevo->siguiente = NULL;
+        return despues_de;
+
+    if (despues_de == NULL) {
+        /* -------- COMPLETAR --------
+         * El carrusel está vacío.
+         * El nuevo nodo debe apuntar a sí mismo en ambos sentidos:
+         */
+         nuevo->siguiente=nuevo;
+         nuevo->previo=nuevo;
+         //* --------------------------- */
+        return nuevo;
+    }
+
+    /* -------- COMPLETAR --------
+     * Insertar "nuevo" entre "despues_de" y "despues_de->siguiente".
+     * Hay que actualizar 4 punteros:*/
+     nuevo->siguiente= despues_de->siguiente;
+     nuevo->previo =  despues_de;
+     despues_de->siguiente->previo= nuevo;
+     despues_de->siguiente=nuevo;
+     /*/ Cuidado con el orden de las asignaciones.
+     * --------------------------- */
+
+
     return nuevo;
 }
 
-ListaDLCircular *crear_lista_circular(void) {
-    ListaDLCircular *lista = (ListaDLCircular *)malloc(sizeof(ListaDLCircular));
-    if (lista == NULL)
+/*
+ *  TODO 2: eliminar_del_carrusel
+ *
+ *  Elimina el nodo "objetivo" del carrusel circular y libera su memoria.
+ *
+ *  Si el carrusel solo tiene un elemento (objetivo->siguiente == objetivo),
+ *  libera el nodo y retorna NULL.
+ *
+ *  Si tiene más elementos, conecta el nodo previo con el siguiente,
+ *  libera el nodo eliminado, y retorna el nodo siguiente (la nueva
+ *  selección).
+ *
+ *  Retorna: puntero al nodo siguiente, o NULL si el carrusel queda vacío.
+ */
+dllista *eliminar_del_carrusel(dllista *objetivo) {
+    if (objetivo == NULL)
         return NULL;
-    lista->cabeza = NULL;
-    lista->longitud = 0;
-    return lista;
-}
 
-void insertar_inicio_circular(ListaDLCircular *lista, DATO dato) {
-    dllista_circular *nuevo = crear_elemento_circular(dato);
-    if (nuevo == NULL)
-        return;
-
-    if (lista->cabeza == NULL) {
-        // Lista vacía: el nodo se apunta a sí mismo
-        lista->cabeza = nuevo;
-        nuevo->siguiente = nuevo;
-        nuevo->previo = nuevo;
-    } else {
-        dllista_circular *ultimo = lista->cabeza->previo;
-        
-        // Insertar al inicio
-        nuevo->siguiente = lista->cabeza;
-        nuevo->previo = ultimo;
-        lista->cabeza->previo = nuevo;
-        ultimo->siguiente = nuevo;
-        lista->cabeza = nuevo;
+    /* -------- COMPLETAR --------
+     * Caso 1: solo hay un elemento (objetivo->siguiente == objetivo).
+     *   Libera el nodo y retorna NULL.*/
+    if(objetivo->siguiente == objetivo){
+        free(objetivo);
+        return NULL;
     }
-    lista->longitud++;
+     /* Caso 2: hay más elementos.
+     *   - Guarda un puntero al nodo siguiente (será el retorno).
+     *   - Conecta objetivo->previo->siguiente con objetivo->siguiente.
+     *   - Conecta objetivo->siguiente->previo con objetivo->previo.
+     *   - Libera objetivo.
+     *   - Retorna el nodo siguiente.
+     * --------------------------- */
+    dllista *sig = objetivo->siguiente;
+    //sig -> siguiente;
+    //siguiente -> objetivo -> previo;
+    return NULL; /* Sustituir */
 }
 
-void insertar_final_circular(ListaDLCircular *lista, DATO dato) {
-    dllista_circular *nuevo = crear_elemento_circular(dato);
-    if (nuevo == NULL)
-        return;
+/*
+ *  TODO 3: avanzar
+ *
+ *  Avanza la selección "n" posiciones hacia adelante (siguiente).
+ *
+ *  Retorna: el nodo en la nueva posición.
+ */
+dllista *avanzar(dllista *seleccion, int n) {
+    /* -------- COMPLETAR --------
+     * Recorre "n" veces usando seleccion->siguiente.
+     * --------------------------- */
 
-    if (lista->cabeza == NULL) {
-        // Lista vacía: el nodo se apunta a sí mismo
-        lista->cabeza = nuevo;
-        nuevo->siguiente = nuevo;
-        nuevo->previo = nuevo;
-    } else {
-        dllista_circular *ultimo = lista->cabeza->previo;
-        
-        // Insertar al final
-        nuevo->siguiente = lista->cabeza;
-        nuevo->previo = ultimo;
-        ultimo->siguiente = nuevo;
-        lista->cabeza->previo = nuevo;
+
+    return seleccion; /* Sustituir si es necesario */
+}
+
+/*
+ *  TODO 4: retroceder
+ *
+ *  Retrocede la selección "n" posiciones hacia atrás (previo).
+ *
+ *  Retorna: el nodo en la nueva posición.
+ */
+dllista *retroceder(dllista *seleccion, int n) {
+    /* -------- COMPLETAR --------
+     * Recorre "n" veces usando seleccion->previo.
+     * --------------------------- */
+
+
+    return seleccion; /* Sustituir si es necesario */
+}
+
+/* ================================================================
+ *  Simulación del carrusel de inventario
+ * ================================================================ */
+
+int main(void) {
+    printf("╔══════════════════════════════════════╗\n");
+    printf("║     CARRUSEL DE INVENTARIO           ║\n");
+    printf("╚══════════════════════════════════════╝\n\n");
+
+    /* --- Construir el inventario inicial --- */
+    printf(">> Construyendo inventario inicial...\n\n");
+
+    dllista *seleccion = NULL;
+    seleccion = insertar_en_carrusel(seleccion, ESPADA);
+    seleccion = insertar_en_carrusel(seleccion, ARCO);
+    seleccion = insertar_en_carrusel(seleccion, ESCUDO);
+    seleccion = insertar_en_carrusel(seleccion, POCION);
+    seleccion = insertar_en_carrusel(seleccion, BOMBA);
+
+    /* Volver a la Espada como selección inicial */
+    seleccion = avanzar(seleccion, 1);
+
+    printf("  Inventario inicial (%d objetos):\n", contar_carrusel(seleccion));
+    imprimir_inventario(seleccion);
+    printf("\n");
+
+    /* --- Navegar hacia adelante --- */
+    printf(">> Avanzar 1 posición (siguiente):\n");
+    seleccion = avanzar(seleccion, 1);
+    mostrar_carrusel(seleccion);
+    printf("  Equipado: %s\n\n", nombre_herramienta(seleccion->dato));
+
+    printf(">> Avanzar 2 posiciones:\n");
+    seleccion = avanzar(seleccion, 2);
+    mostrar_carrusel(seleccion);
+    printf("  Equipado: %s\n\n", nombre_herramienta(seleccion->dato));
+
+    /* --- Navegar hacia atrás --- */
+    printf(">> Retroceder 1 posición (anterior):\n");
+    seleccion = retroceder(seleccion, 1);
+    mostrar_carrusel(seleccion);
+    printf("  Equipado: %s\n\n", nombre_herramienta(seleccion->dato));
+
+    printf(">> Retroceder 3 posiciones:\n");
+    seleccion = retroceder(seleccion, 3);
+    mostrar_carrusel(seleccion);
+    printf("  Equipado: %s\n\n", nombre_herramienta(seleccion->dato));
+
+    /* --- Agregar herramienta --- */
+    printf(">> Recoger Antorcha (se agrega después de la selección actual):\n");
+    insertar_en_carrusel(seleccion, ANTORCHA);
+    printf("  Inventario (%d objetos):\n", contar_carrusel(seleccion));
+    imprimir_inventario(seleccion);
+    mostrar_carrusel(seleccion);
+    printf("\n");
+
+    /* --- Eliminar herramienta --- */
+    printf(">> Usar Bomba (se elimina del inventario):\n");
+    /* Navegar hasta la bomba */
+    while (seleccion->dato != BOMBA)
+        seleccion = avanzar(seleccion, 1);
+    printf("  Eliminando: %s\n", nombre_herramienta(seleccion->dato));
+    seleccion = eliminar_del_carrusel(seleccion);
+    printf("  Nueva selección: %s\n", nombre_herramienta(seleccion->dato));
+    printf("  Inventario (%d objetos):\n", contar_carrusel(seleccion));
+    imprimir_inventario(seleccion);
+    mostrar_carrusel(seleccion);
+    printf("\n");
+
+    /* --- Dar una vuelta completa --- */
+    printf(">> Vuelta completa al carrusel:\n");
+    int total = contar_carrusel(seleccion);
+    dllista *recorrido = seleccion;
+    printf("  ");
+    for (int i = 0; i < total; i++) {
+        printf("%s", nombre_herramienta(recorrido->dato));
+        recorrido = avanzar(recorrido, 1);
+        if (i < total - 1) printf(" -> ");
     }
-    lista->longitud++;
-}
+    printf(" -> (vuelta)\n\n");
 
-void insertar_en_posicion_circular(ListaDLCircular *lista, DATO dato, int posicion) {
-    if (posicion < 0 || posicion > lista->longitud)
-        return;
-
-    if (posicion == 0) {
-        insertar_inicio_circular(lista, dato);
-        return;
+    printf(">> Vuelta completa en reversa:\n");
+    recorrido = seleccion;
+    printf("  ");
+    for (int i = 0; i < total; i++) {
+        printf("%s", nombre_herramienta(recorrido->dato));
+        recorrido = retroceder(recorrido, 1);
+        if (i < total - 1) printf(" -> ");
     }
-    if (posicion == lista->longitud) {
-        insertar_final_circular(lista, dato);
-        return;
-    }
+    printf(" -> (vuelta)\n\n");
 
-    dllista_circular *nuevo = crear_elemento_circular(dato);
-    if (nuevo == NULL)
-        return;
+    /* --- Liberar memoria --- */
+    printf(">> Vaciando inventario...\n");
+    while (seleccion != NULL)
+        seleccion = eliminar_del_carrusel(seleccion);
+    printf("  Inventario final: %d objetos\n", contar_carrusel(seleccion));
 
-    dllista_circular *actual = lista->cabeza;
-    for (int i = 0; i < posicion; i++)
-        actual = actual->siguiente;
-
-    nuevo->previo = actual->previo;
-    nuevo->siguiente = actual;
-    actual->previo->siguiente = nuevo;
-    actual->previo = nuevo;
-    lista->longitud++;
-}
-
-DATO eliminar_inicio_circular(ListaDLCircular *lista) {
-    if (lista->cabeza == NULL)
-        return -1;
-
-    dllista_circular *eliminado = lista->cabeza;
-    DATO dato = eliminado->dato;
-
-    if (lista->longitud == 1) {
-        // Solo un elemento
-        lista->cabeza = NULL;
-    } else {
-        dllista_circular *ultimo = lista->cabeza->previo;
-        lista->cabeza = lista->cabeza->siguiente;
-        lista->cabeza->previo = ultimo;
-        ultimo->siguiente = lista->cabeza;
-    }
-
-    free(eliminado);
-    lista->longitud--;
-    return dato;
-}
-
-DATO eliminar_final_circular(ListaDLCircular *lista) {
-    if (lista->cabeza == NULL)
-        return -1;
-
-    if (lista->longitud == 1) {
-        DATO dato = lista->cabeza->dato;
-        free(lista->cabeza);
-        lista->cabeza = NULL;
-        lista->longitud--;
-        return dato;
-    }
-
-    dllista_circular *ultimo = lista->cabeza->previo;
-    dllista_circular *nuevo_ultimo = ultimo->previo;
-    DATO dato = ultimo->dato;
-
-    nuevo_ultimo->siguiente = lista->cabeza;
-    lista->cabeza->previo = nuevo_ultimo;
-
-    free(ultimo);
-    lista->longitud--;
-    return dato;
-}
-
-DATO eliminar_en_posicion_circular(ListaDLCircular *lista, int posicion) {
-    if (posicion < 0 || posicion >= lista->longitud)
-        return -1;
-
-    if (posicion == 0)
-        return eliminar_inicio_circular(lista);
-    if (posicion == lista->longitud - 1)
-        return eliminar_final_circular(lista);
-
-    dllista_circular *actual = lista->cabeza;
-    for (int i = 0; i < posicion; i++)
-        actual = actual->siguiente;
-
-    DATO dato = actual->dato;
-    actual->previo->siguiente = actual->siguiente;
-    actual->siguiente->previo = actual->previo;
-    free(actual);
-    lista->longitud--;
-    return dato;
-}
-
-int buscar_circular(ListaDLCircular *lista, DATO dato) {
-    if (lista->cabeza == NULL)
-        return -1;
-
-    dllista_circular *actual = lista->cabeza;
-    int posicion = 0;
-    
-    do {
-        if (actual->dato == dato)
-            return posicion;
-        actual = actual->siguiente;
-        posicion++;
-    } while (actual != lista->cabeza);
-    
-    return -1;
-}
-
-DATO obtener_circular(ListaDLCircular *lista, int posicion) {
-    if (posicion < 0 || posicion >= lista->longitud)
-        return -1;
-
-    dllista_circular *actual = lista->cabeza;
-    for (int i = 0; i < posicion; i++)
-        actual = actual->siguiente;
-    return actual->dato;
-}
-
-int esta_vacia_circular(ListaDLCircular *lista) {
-    return lista->cabeza == NULL;
-}
-
-int longitud_circular(ListaDLCircular *lista) {
-    return lista->longitud;
-}
-
-void imprimir_lista_circular(ListaDLCircular *lista) {
-    if (lista->cabeza == NULL) {
-        printf("Lista vacía (circular)\n");
-        return;
-    }
-
-    dllista_circular *actual = lista->cabeza;
-    do {
-        printf("[%d]", actual->dato);
-        if (actual->siguiente != lista->cabeza)
-            printf(" <-> ");
-        actual = actual->siguiente;
-    } while (actual != lista->cabeza);
-    printf(" (circular)\n");
-}
-
-void imprimir_lista_reversa_circular(ListaDLCircular *lista) {
-    if (lista->cabeza == NULL) {
-        printf("Lista vacía (circular)\n");
-        return;
-    }
-
-    dllista_circular *actual = lista->cabeza->previo; // Comenzar desde el último
-    do {
-        printf("[%d]", actual->dato);
-        if (actual->previo != lista->cabeza->previo)
-            printf(" <-> ");
-        actual = actual->previo;
-    } while (actual != lista->cabeza->previo);
-    printf(" (circular reversa)\n");
-}
-
-void liberar_lista_circular(ListaDLCircular *lista) {
-    if (lista->cabeza == NULL) {
-        free(lista);
-        return;
-    }
-
-    dllista_circular *actual = lista->cabeza;
-    dllista_circular *siguiente;
-    
-    do {
-        siguiente = actual->siguiente;
-        free(actual);
-        actual = siguiente;
-    } while (actual != lista->cabeza);
-    
-    free(lista);
-}
-
-#include "listadl_circular.h"
-#include <stdio.h>
-
-void mostrar_menu() {
-    printf("\n=== MENÚ LISTA DOBLEMENTE LIGADA CIRCULAR ===\n");
-    printf("1. Insertar al inicio\n");
-    printf("2. Insertar al final\n");
-    printf("3. Insertar en posición\n");
-    printf("4. Eliminar del inicio\n");
-    printf("5. Eliminar del final\n");
-    printf("6. Eliminar en posición\n");
-    printf("7. Buscar elemento\n");
-    printf("8. Obtener elemento por posición\n");
-    printf("9. Mostrar lista\n");
-    printf("10. Mostrar lista reversa\n");
-    printf("11. Mostrar longitud\n");
-    printf("12. Verificar si está vacía\n");
-    printf("0. Salir\n");
-    printf("============================\n");
-    printf("Opción: ");
-}
-
-int main() {
-    ListaDLCircular *miLista = crear_lista_circular();
-    int opcion, dato, posicion;
-    
-    if (miLista == NULL) {
-        printf("Error al crear la lista\n");
-        return 1;
-    }
-    
-    do {
-        mostrar_menu();
-        scanf("%d", &opcion);
-        
-        switch(opcion) {
-            case 1: // Insertar al inicio
-                printf("Ingrese el número a insertar: ");
-                scanf("%d", &dato);
-                insertar_inicio_circular(miLista, dato);
-                printf("Número %d insertado al inicio\n", dato);
-                break;
-                
-            case 2: // Insertar al final
-                printf("Ingrese el número a insertar: ");
-                scanf("%d", &dato);
-                insertar_final_circular(miLista, dato);
-                printf("Número %d insertado al final\n", dato);
-                break;
-                
-            case 3: // Insertar en posición
-                printf("Ingrese el número a insertar: ");
-                scanf("%d", &dato);
-                printf("Ingrese la posición (0-indexada): ");
-                scanf("%d", &posicion);
-                insertar_en_posicion_circular(miLista, dato, posicion);
-                printf("Número %d insertado en posición %d\n", dato, posicion);
-                break;
-                
-            case 4: // Eliminar del inicio
-                dato = eliminar_inicio_circular(miLista);
-                if (dato != -1)
-                    printf("Elemento %d eliminado del inicio\n", dato);
-                else
-                    printf("Error: La lista está vacía\n");
-                break;
-                
-            case 5: // Eliminar del final
-                dato = eliminar_final_circular(miLista);
-                if (dato != -1)
-                    printf("Elemento %d eliminado del final\n", dato);
-                else
-                    printf("Error: La lista está vacía\n");
-                break;
-                
-            case 6: // Eliminar en posición
-                printf("Ingrese la posición a eliminar (0-indexada): ");
-                scanf("%d", &posicion);
-                dato = eliminar_en_posicion_circular(miLista, posicion);
-                if (dato != -1)
-                    printf("Elemento %d eliminado de la posición %d\n", dato, posicion);
-                else
-                    printf("Error: Posición inválida o lista vacía\n");
-                break;
-                
-            case 7: // Buscar elemento
-                printf("Ingrese el número a buscar: ");
-                scanf("%d", &dato);
-                posicion = buscar_circular(miLista, dato);
-                if (posicion != -1)
-                    printf("El número %d se encuentra en la posición %d\n", dato, posicion);
-                else
-                    printf("El número %d no se encuentra en la lista\n", dato);
-                break;
-                
-            case 8: // Obtener elemento por posición
-                printf("Ingrese la posición (0-indexada): ");
-                scanf("%d", &posicion);
-                dato = obtener_circular(miLista, posicion);
-                if (dato != -1)
-                    printf("En la posición %d se encuentra el número %d\n", posicion, dato);
-                else
-                    printf("Posición inválida\n");
-                break;
-                
-            case 9: // Mostrar lista y longitud
-                printf("\nLista actual: ");
-                imprimir_lista_circular(miLista);
-
-                printf("\nLista actual (reversa): ");
-                imprimir_lista_reversa_circular(miLista);
-
-                printf("Longitud de la lista: %d\n", longitud_circular(miLista));
-                break;
-                
-            case 10: // Verificar si está vacía
-                if (esta_vacia_circular(miLista))
-                    printf("La lista está vacía\n");
-                else
-                    printf("La lista no está vacía\n");
-                break;
-                
-            case 0: // Salir
-                printf("pppppp......\n");
-                break;
-                
-            default:
-                printf("Opción inválida. Intente de nuevo.\n");
-        }
-    } while(opcion != 0);
-    
-    liberar_lista_circular(miLista);
     return 0;
 }
