@@ -145,22 +145,21 @@ dllista *insertar_en_carrusel(dllista *despues_de, DATO dato) {
         /* -------- COMPLETAR --------
          * El carrusel está vacío.
          * El nuevo nodo debe apuntar a sí mismo en ambos sentidos:
-         *   nuevo->siguiente = ???
-         *   nuevo->previo    = ???
-         * --------------------------- */
-
-
+         */
+         nuevo->siguiente=nuevo;
+         nuevo->previo=nuevo;
+         //* --------------------------- */
         return nuevo;
     }
 
     /* -------- COMPLETAR --------
      * Insertar "nuevo" entre "despues_de" y "despues_de->siguiente".
-     * Hay que actualizar 4 punteros:
-     *   nuevo->siguiente      = ???
-     *   nuevo->previo         = ???
-     *   despues_de->siguiente->previo = ???
-     *   despues_de->siguiente = ???
-     * Cuidado con el orden de las asignaciones.
+     * Hay que actualizar 4 punteros:*/
+     nuevo->siguiente= despues_de->siguiente;
+     nuevo->previo =  despues_de;
+     despues_de->siguiente->previo= nuevo;
+     despues_de->siguiente=nuevo;
+     /*/ Cuidado con el orden de las asignaciones.
      * --------------------------- */
 
 
@@ -187,17 +186,21 @@ dllista *eliminar_del_carrusel(dllista *objetivo) {
 
     /* -------- COMPLETAR --------
      * Caso 1: solo hay un elemento (objetivo->siguiente == objetivo).
-     *   Libera el nodo y retorna NULL.
-     *
-     * Caso 2: hay más elementos.
+     *   Libera el nodo y retorna NULL.*/
+    if(objetivo->siguiente == objetivo){
+        free(objetivo);
+        return NULL;
+    }
+     /* Caso 2: hay más elementos.
      *   - Guarda un puntero al nodo siguiente (será el retorno).
      *   - Conecta objetivo->previo->siguiente con objetivo->siguiente.
      *   - Conecta objetivo->siguiente->previo con objetivo->previo.
      *   - Libera objetivo.
      *   - Retorna el nodo siguiente.
      * --------------------------- */
-
-
+    dllista *sig = objetivo->siguiente;
+    //sig -> siguiente;
+    //siguiente -> objetivo -> previo;
     return NULL; /* Sustituir */
 }
 
