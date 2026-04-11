@@ -27,7 +27,6 @@
 
 #include "listadl.h"
 #include <string.h>
-
 /* ---------- Configuración del tablero ---------- */
 #define FILAS    15
 #define COLUMNAS 30
@@ -136,7 +135,7 @@ void mostrar_estado(int turno, int puntaje, int dir) {
 DATO calcular_nueva_cabeza(DATO cabeza_actual, int direccion) {
     int f = FILA(cabeza_actual);
     int c = COL(cabeza_actual);
-
+    
     /* -------- COMPLETAR --------
      * Modifica f y/o c según la dirección:
      *   ARRIBA    -> f disminuye en 1
@@ -144,8 +143,15 @@ DATO calcular_nueva_cabeza(DATO cabeza_actual, int direccion) {
      *   IZQUIERDA -> c disminuye en 1
      *   DERECHA   -> c aumenta en 1
      * --------------------------- */
-
-
+    
+    if(direccion == ARRIBA)
+    f--;
+    else if (direccion == ABAJO)
+    f++;
+    else if (direccion == IZQUIERDA)
+    c--;
+    else if (direccion == DERECHA)
+    c++;
 
     return POS(f, c);
 }
@@ -167,8 +173,7 @@ int colision_pared(DATO posicion) {
      *   f <= 0, f >= FILAS-1, c <= 0, c >= COLUMNAS-1
      * --------------------------- */
 
-
-    return 0; /* Sustituir por la condición correcta */
+    return (f<=0 || f>=FILAS-1 || c<=0 || c>= COLUMNAS-1); /* Sustituir por la condición correcta */
 }
 
 /*
@@ -187,8 +192,7 @@ int colision_cuerpo(ListaDL *vibora, DATO nueva_pos) {
      * ya está ocupada por un segmento.
      * --------------------------- */
 
-
-    return 0; /* Sustituir */
+    return (buscar(vibora, nueva_pos) != -1); /* Sustituir */
 }
 
 /*
@@ -218,7 +222,14 @@ int mover_vibora(ListaDL *vibora, int direccion, DATO comida) {
      * 2. Si nueva_pos == comida, retorna 1 (comió).
      * 3. Si no, elimina el último elemento y retorna 0.
      * --------------------------- */
-
+     
+     insertar_inicio(vibora, nueva_pos);
+     
+     if (nueva_pos == comida){
+         return 1;
+     }
+     
+     eliminar_final(vibora); 
 
     return 0; /* Sustituir */
 }
