@@ -199,9 +199,11 @@ dllista *eliminar_del_carrusel(dllista *objetivo) {
      *   - Retorna el nodo siguiente.
      * --------------------------- */
     dllista *sig = objetivo->siguiente;
-    //sig -> siguiente;
-    //siguiente -> objetivo -> previo;
-    return NULL; /* Sustituir */
+    objetivo->previo->siguiente = objetivo->siguiente;
+    objetivo->siguiente->previo = objetivo->previo;
+    free(objetivo);
+    return sig;
+
 }
 
 /*
@@ -215,8 +217,10 @@ dllista *avanzar(dllista *seleccion, int n) {
     /* -------- COMPLETAR --------
      * Recorre "n" veces usando seleccion->siguiente.
      * --------------------------- */
-
-
+    if(seleccion == NULL)
+        return NULL;
+    for(int i=0; i<n; i++)
+        seleccion=seleccion->siguiente;
     return seleccion; /* Sustituir si es necesario */
 }
 
@@ -231,8 +235,10 @@ dllista *retroceder(dllista *seleccion, int n) {
     /* -------- COMPLETAR --------
      * Recorre "n" veces usando seleccion->previo.
      * --------------------------- */
-
-
+    if(seleccion==NULL)
+        return NULL;
+    for(int i=0; i<n; i++)
+        seleccion=seleccion->previo;
     return seleccion; /* Sustituir si es necesario */
 }
 
