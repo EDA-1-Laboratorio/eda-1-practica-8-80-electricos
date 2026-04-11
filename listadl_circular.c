@@ -257,10 +257,8 @@ void mostrar_menu() {
     printf("6. Eliminar en posición\n");
     printf("7. Buscar elemento\n");
     printf("8. Obtener elemento por posición\n");
-    printf("9. Mostrar lista\n");
-    printf("10. Mostrar lista reversa\n");
-    printf("11. Mostrar longitud\n");
-    printf("12. Verificar si está vacía\n");
+    printf("9. Mostrar listas y longitud\n");
+    printf("10. Verificar si está vacía\n");
     printf("0. Salir\n");
     printf("============================\n");
     printf("Opción: ");
@@ -356,7 +354,7 @@ int main() {
                 printf("\nLista actual (reversa): ");
                 imprimir_lista_reversa_circular(miLista);
 
-                printf("Longitud de la lista: %d\n", longitud_circular(miLista));
+                printf("\nLongitud de la lista: %d\n", longitud_circular(miLista));
                 break;
                 
             case 10: // Verificar si está vacía
@@ -367,7 +365,9 @@ int main() {
                 break;
                 
             case 0: // Salir
-                printf("pppppp......\n");
+                printf("\n-----------------------\n");
+                printf("\nCerrando el programa...\n");
+                printf("\n-----------------------\n");
                 break;
                 
             default:
